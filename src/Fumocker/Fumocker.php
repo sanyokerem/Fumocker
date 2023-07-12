@@ -1,6 +1,9 @@
 <?php
 namespace Fumocker;
 
+use PHPUnit\Framework\MockObject\Generator\Generator;
+use PHPUnit\Framework\MockObject\MockObject;
+
 /**
  *
  */
@@ -38,13 +41,13 @@ class Fumocker
      * @throws \RuntimeException
      * @throws \InvalidArgumentException if function does not exist in global namespace
      *
-     * @return \PHPUnit_Framework_MockObject_MockObject
+     * @return MockObject
      */
     public function getMock($namespace, $function)
     {
-        if (false == \class_exists('PHPUnit_Framework_MockObject_Generator', true)) {
+        if (false == \class_exists(Generator::class)) {
             throw new \RuntimeException(
-                'PHPUnit_Framework_MockObject_Generator class not found. In order to use this library install PHPUnit_Framework_MockObject library.'
+                'PHPUnit\Framework\MockObject\Generator class not found. In order to use this library install PHPUnit_Framework_MockObject library.'
             );
         }
 
@@ -59,7 +62,7 @@ class Fumocker
             $this->generator->generate($namespace, $function);
         }
 
-        $generator = new \PHPUnit_Framework_MockObject_Generator;
+        $generator = new Generator;
         $this->mocks[] = $functionMock = $generator->getMock('stdClass', array($function));
 
         $this->registry->set($namespace, $function, array($functionMock, $function));

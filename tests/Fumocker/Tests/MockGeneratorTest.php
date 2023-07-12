@@ -3,19 +3,20 @@ namespace Fumocker\Tests;
 
 use Fumocker\MockGenerator;
 use Fumocker\CallbackRegistry;
+use PHPUnit\Framework\TestCase;
 
-class MockGeneratorTest extends \PHPUnit_Framework_TestCase
+class MockGeneratorTest extends TestCase
 {
     /**
      * @test
      *
      * @dataProvider provideNotStringTypes
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid function name provided
      */
     public function throwWhenFunctionNameNotStringWhileGeneration($invalidFunctionName)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid function name provided');
+
         $generator = new MockGenerator();
 
         $generator->generate('namespace', $invalidFunctionName);
@@ -25,12 +26,12 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @dataProvider provideEmpties
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Given function name is empty
      */
     public function throwWhenFunctionEmptyWhileGeneration($emptyFunctionName)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Given function name is empty');
+
         $generator = new MockGenerator();
 
         $generator->generate('namespace', $emptyFunctionName);
@@ -40,12 +41,12 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @dataProvider provideNotStringTypes
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid namespace provided
      */
     public function throwWhenNamespaceNotStringWhileGeneration($invalidNamespace)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid namespace provided');
+
         $generator = new MockGenerator();
 
         $generator->generate($invalidNamespace, 'function');
@@ -55,12 +56,12 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @dataProvider provideEmpties
-     *
-     * @expectedException LogicException
-     * @expectedExceptionMessage Given namespace is empty
      */
     public function throwWhenNamespaceEmptyWhileGeneration($emptyNamespace)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Given namespace is empty');
+
         $generator = new MockGenerator();
 
         $generator->generate($emptyNamespace, 'function');
@@ -89,12 +90,12 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
-     *
-     * @expectedException LogicException
-     * @expectedExceptionMessage The function `user_defined_function` in the namespace `Fumocker\Tests` has already been defined by a user
      */
     public function throwIfUserAlreadyDefineFunctionInTheNamespace()
     {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The function `user_defined_function` in the namespace `Fumocker\Tests` has already been defined by a user');
+
         $generator = new MockGenerator();
 
         $generator->generate(__NAMESPACE__, 'user_defined_function');
@@ -102,12 +103,12 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
-     *
-     * @expectedException LogicException
-     * @expectedExceptionMessage The function `mocked_function` in the namespace `Fumocker\Tests` has been already mocked
      */
     public function throwIfMockedFunctionAlreadyGeneratedInTheNamespace()
     {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('The function `mocked_function` in the namespace `Fumocker\Tests` has been already mocked');
+
         $generator = new MockGenerator();
 
         $generator->generate(__NAMESPACE__, 'mocked_function');
@@ -153,7 +154,10 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
         //guard
         $this->assertFunctionNotExists(__NAMESPACE__, 'test_redirect_call_to_callable');
 
-        $mockCallable = $this->getMock('\stdClass', array('__invoke'));
+        $mockCallable = $this
+            ->getMockBuilder(\stdClass::class)
+            ->addMethods(['__invoke'])
+            ->getMock();
         $mockCallable
             ->expects($this->once())
             ->method('__invoke')
@@ -181,7 +185,10 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
         $expectedSecondArgument = array('bar');
         $expectedThirdArgument = new \stdClass();
 
-        $mockCallable = $this->getMock('\stdClass', array('__invoke'));
+        $mockCallable = $this
+            ->getMockBuilder(\stdClass::class)
+            ->addMethods(['__invoke'])
+            ->getMock();
         $mockCallable
             ->expects($this->once())
             ->method('__invoke')
@@ -212,7 +219,10 @@ class MockGeneratorTest extends \PHPUnit_Framework_TestCase
 
         $expectedResult = 'foo';
 
-        $mockCallable = $this->getMock('\stdClass', array('__invoke'));
+        $mockCallable = $this
+            ->getMockBuilder(\stdClass::class)
+            ->addMethods(['__invoke'])
+            ->getMock();
         $mockCallable
             ->expects($this->once())
             ->method('__invoke')

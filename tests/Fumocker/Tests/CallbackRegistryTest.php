@@ -2,18 +2,19 @@
 namespace Fumocker\Tests;
 
 use Fumocker\CallbackRegistry;
+use PHPUnit\Framework\TestCase;
 
-class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
+class CallbackRegistryTest extends TestCase
 {
     /**
      * @return void
      */
-    public function setUp()
+    protected function setUp(): void
     {
         self::unsetCallbackRegistrySingleton();
     }
 
-    public static function tearDownAfterClass()
+    public static function tearDownAfterClass(): void
     {
         self::unsetCallbackRegistrySingleton();
     }
@@ -25,6 +26,8 @@ class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
      */
     public function shouldAllowToSetCallable($validCallable)
     {
+        $this->expectNotToPerformAssertions();
+
         CallbackRegistry::getInstance()->set('namespace', 'functionName', $validCallable);
     }
 
@@ -32,12 +35,12 @@ class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @dataProvider provideNoCallableItems
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid callable provided
      */
     public function throwWhenSetInvalidCallable($invalidCallable)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid callable provided');
+
         CallbackRegistry::getInstance()->set('namespace', 'functionName', $invalidCallable);
     }
 
@@ -45,12 +48,12 @@ class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @dataProvider provideNoStrings
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid function name provided. Should be a string
      */
     public function throwWhenSetCallableWithInvalidFunctionName($invalidFunctionName)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid function name provided. Should be a string');
+
         $registry = CallbackRegistry::getInstance();
 
         $registry->set('namespace', $invalidFunctionName, function(){});
@@ -60,12 +63,12 @@ class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @dataProvider provideNoStrings
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Invalid namespace provided. Should be a string
      */
     public function throwWhenSetCallableWithInvalidNamespace($invalidNamespace)
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid namespace provided. Should be a string');
+
         $registry = CallbackRegistry::getInstance();
 
         $registry->set($invalidNamespace, 'functionName', function(){});
@@ -90,12 +93,12 @@ class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage Cannot find a callable related to foo_ns\bar_func()
      */
     public function throwWhenGetCallableNotSetBefore()
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot find a callable related to foo_ns\bar_func()');
+
         $registry = CallbackRegistry::getInstance();
 
         $registry->get('foo_ns', 'bar_func');
@@ -166,11 +169,11 @@ class CallbackRegistryTest extends \PHPUnit_Framework_TestCase
 
         $callables = $registry->getAll();
 
-        $this->assertInternalType('array', $callables);
-        $this->assertEquals(2, count($callables));
+        $this->assertIsArray($callables);
+        $this->assertCount(2, $callables);
 
-        $this->assertInternalType('array', $callables[0]);
-        $this->assertInternalType('array', $callables[1]);
+        $this->assertIsArray($callables[0]);
+        $this->assertIsArray($callables[1]);
 
         $expectedFirstCallable = array(
             'namespace' => $expectedNamespaceFoo,

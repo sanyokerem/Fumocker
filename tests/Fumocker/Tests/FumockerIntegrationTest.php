@@ -2,20 +2,21 @@
 namespace Fumocker\Tests;
 
 use Fumocker\Fumocker;
+use PHPUnit\Framework\TestCase;
 
-class FumockerIntegrationTest extends \PHPUnit_Framework_TestCase
+class FumockerIntegrationTest extends TestCase
 {
     /**
      * @var \Fumocker\Fumocker
      */
     protected $fumocker;
 
-    public function setUp()
+    protected function setUp(): void
     {
         $this->fumocker = new Fumocker();
     }
 
-    public function tearDown()
+    protected function tearDown(): void
     {
         $this->fumocker->cleanup();
     }

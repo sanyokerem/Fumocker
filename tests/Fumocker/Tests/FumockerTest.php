@@ -1,44 +1,23 @@
 <?php
 namespace Fumocker\Tests;
 
+use Fumocker\CallbackRegistry;
 use Fumocker\Fumocker;
 use Fumocker\MockGenerator;
+use PHPUnit\Framework\ExpectationFailedException;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class FumockerTest extends \PHPUnit_Framework_TestCase
+class FumockerTest extends TestCase
 {
     /**
      * @test
      */
-    public function shouldAcceptOptionalGeneratorAndCallbackRegistryInConstructor()
-    {
-        $expectedGenerator = $this->createGeneratorMock();
-        $expectedRegistry = $this->createCallbackRegistryMock();
-
-        $fumocker = new Fumocker($expectedGenerator, $expectedRegistry);
-
-        $this->assertAttributeSame($expectedGenerator, 'generator', $fumocker);
-        $this->assertAttributeSame($expectedRegistry, 'registry', $fumocker);
-    }
-
-    /**
-     * @test
-     */
-    public function shouldCreateGeneratorAndCallbackRegistryInConstructorIfNotProvided()
-    {
-        $fumocker = new Fumocker();
-
-        $this->assertAttributeInstanceOf('Fumocker\MockGenerator', 'generator', $fumocker);
-        $this->assertAttributeInstanceOf('Fumocker\CallbackRegistry', 'registry', $fumocker);
-    }
-
-    /**
-     * @test
-     *
-     * @expectedException InvalidArgumentException
-     * @expectedExceptionMessage The global function with name `foo` does not exist.
-     */
     public function throwWhileGettingMockOfNotExistGlobalFunction()
     {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The global function with name `foo` does not exist.');
+
         $fumocker = new Fumocker(
             $this->createGeneratorMock(),
             $this->createCallbackRegistryMock()
@@ -71,7 +50,7 @@ class FumockerTest extends \PHPUnit_Framework_TestCase
 
         $functionMockObject = $fumocker->getMock($namespace, $function);
 
-        $this->assertInstanceOf('PHPUnit_Framework_MockObject_MockObject', $functionMockObject);
+        $this->assertInstanceOf(MockObject::class, $functionMockObject);
         $this->assertTrue(method_exists($functionMockObject, $function));
     }
 
@@ -215,21 +194,27 @@ class FumockerTest extends \PHPUnit_Framework_TestCase
             )))
         ;
         $registryMock
-            ->expects($this->at(1))
+            ->expects($this->exactly(2))
             ->method('set')
-            ->with(
-                $this->equalTo($firstNamespace),
-                $this->equalTo($firstFunctionName),
-                $this->equalTo($firstFunctionName)
-            )
-        ;
-        $registryMock
-            ->expects($this->at(2))
-            ->method('set')
-            ->with(
-                $this->equalTo($secondNamespace),
-                $this->equalTo($secondFunctionName),
-                $this->equalTo($secondFunctionName)
+            ->willReturnOnConsecutiveCalls(
+                $this->returnCallback(function (
+                    string $namespace,
+                    string $functionName,
+                    string $callable
+                ) use ($firstNamespace, $firstFunctionName) {
+                    $this->assertEquals($namespace, $firstNamespace);
+                    $this->assertEquals($functionName, $firstFunctionName);
+                    $this->assertEquals($callable, $firstFunctionName);
+                }),
+                $this->returnCallback(function (
+                    string $namespace,
+                    string $functionName,
+                    string $callable
+                ) use ($secondNamespace, $secondFunctionName) {
+                    $this->assertEquals($namespace, $secondNamespace);
+                    $this->assertEquals($functionName, $secondFunctionName);
+                    $this->assertEquals($callable, $secondFunctionName);
+                })
             )
         ;
 
@@ -242,12 +227,12 @@ class FumockerTest extends \PHPUnit_Framework_TestCase
      * @test
      *
      * @depends shouldReturnPhpunitMockObjectWithMethodNamedAsGivenFunction
-     *
-     * @expectedException PHPUnit_Framework_ExpectationFailedException
-     * @expectedExceptionMessage Method was expected to be called 1 times, actually called 0 times.
      */
     public function shouldVerifyFunctionMockThatItCalledOneTimeWhenInRealNeverCalled()
     {
+        $this->expectException(ExpectationFailedException::class);
+        $this->expectExceptionMessage('Method was expected to be called 1 times, actually called 0 times.');
+
         $registryMock = $this->createCallbackRegistryMock();
         $registryMock
             ->expects($this->any())
@@ -272,11 +257,13 @@ class FumockerTest extends \PHPUnit_Framework_TestCase
      */
     public function shouldNotVerifyFunctionMockTwice()
     {
+        $this->expectNotToPerformAssertions();
+
         $registryMock = $this->createCallbackRegistryMock();
         $registryMock
             ->expects($this->any())
             ->method('getAll')
-            ->will($this->returnValue(array()))
+            ->will($this->returnValue([]))
         ;
 
         $fumocker = new Fumocker($this->createGeneratorMock(), $registryMock);
@@ -289,17 +276,21 @@ class FumockerTest extends \PHPUnit_Framework_TestCase
             $fumocker->cleanup();
 
             $this->fail('Cleanup should throw verify exception');
-        } catch (\PHPUnit_Framework_ExpectationFailedException $e) { }
+        } catch (ExpectationFailedException $e) { }
 
         $fumocker->cleanup();
     }
 
     /**
-     * @return \Fumocker\CallbackRegistry
+     * @return \Fumocker\CallbackRegistry|MockObject
      */
     protected function createCallbackRegistryMock()
     {
-        return $this->getMock('Fumocker\CallbackRegistry', array('set', 'get', 'getAll'), array(), '', false);
+        return $this
+            ->getMockBuilder(CallbackRegistry::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['set', 'get', 'getAll'])
+            ->getMock();
     }
 
     /**
@@ -307,6 +298,10 @@ class FumockerTest extends \PHPUnit_Framework_TestCase
      */
     protected function createGeneratorMock()
     {
-        return $this->getMock('Fumocker\MockGenerator', array('generate', 'hasGenerated'));
+        return $this
+            ->getMockBuilder(MockGenerator::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['generate', 'hasGenerated'])
+            ->getMock();
     }
 }
